@@ -1,0 +1,48 @@
+local modem = peripheral.find("modem") or error("No modem found", 0)
+local speakers = {peripheral.find("speaker")} or error("No speakers connected", 0)
+local dfpwm = require("cc.audio.dfpwm")
+local decoder = dfpwm.make_decoder()
+local CHANNEL = 62 -- Must match main computer
+local PROTOCOL = "audio_playback" -- Must match main computer
+
+-- Open rednet on wired modem
+rednet.open(peripheral.getName(modem), CHANNEL)
+
+local function playBuffer(buffer)
+    for _, speaker in ipairs(speakers) do
+        while not speaker.playAudio(buffer) do
+            os.pullEvent("speaker_audio_empty")
+        end
+    end
+end
+
+local function main()
+    term.clear()
+    term.setCursorPos(1, 1)
+    print("Client computer: Waiting for messages:\nChannel: " .. CHANNEL .. ",\nProtocol: " .. PROTOCOL)
+    while true do
+        local id, message = rednet.receive(PROTOCOL)
+        print("Received message from computer " .. id .. ": command = " .. (message.command or "nil"))
+        if message.command == "ping" then
+            print("Sending pong to computer " .. id)
+            rednet.send(id, {command = "pong"}, PROTOCOL)
+        elseif message.command == "chunk" then
+            print("Received chunk, length: " .. #message.data .. " bytes")
+            local buffer = decoder(message.data) -- Decode the DFPWM chunk
+            playBuffer(buffer) -- Play on all speakers
+            print("Chunk played on all speakers")
+            rednet.send(id, {command = "ack"}, PROTOCOL) -- Send acknowledgment
+        elseif message.command == "stop" then
+            print("Received stop command")
+            rednet.send(id, {command = "ack"}, PROTOCOL)
+            -- Stop all speakers on terminate
+            for _, speaker in ipairs(speakers) do
+                speaker.stop()
+            end
+            break
+        end
+    end
+end
+
+main()
+rednet.close(peripheral.getName(modem))

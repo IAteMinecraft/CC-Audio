@@ -1,0 +1,92 @@
+local modem = peripheral.find("modem") or error("No modem found", 0)
+local CHANNEL = 62 -- Rednet channel for communication
+local PROTOCOL = "audio_playback" -- Protocol for messages
+
+-- Open rednet on wired modem
+rednet.open(peripheral.getName(modem), CHANNEL)
+
+local function downloadChunks(url)
+    local handle = assert(http.get(url, nil, true)) -- Binary mode
+    local chunks = {}
+    for chunk in handle.read, 16 * 1024 do
+        table.insert(chunks, chunk)
+    end
+    handle.close()
+    return chunks
+end
+
+local function broadcastChunk(chunk)
+    rednet.broadcast({command = "chunk", data = chunk}, PROTOCOL)
+end
+
+local function waitForAcks(clientIds)
+    local acks = {}
+    while #acks < #clientIds do
+        local id, message = rednet.receive(PROTOCOL, 2)
+        if id and message.command == "ack" then
+            table.insert(acks, id)
+        end
+    end
+end
+
+local function main()
+    -- Discover clients
+    rednet.broadcast({command = "ping"}, PROTOCOL)
+    local clientIds = {}
+    local timer = os.startTimer(2) -- Wait 2 seconds for responses
+    while true do
+        local event, id, message = os.pullEvent()
+        if event == "rednet_message" then
+            if message and message.command == "pong" then
+                table.insert(clientIds, id)
+            end
+        elseif event == "timer" and id == timer then
+            break
+        end
+    end
+    if #clientIds == 0 then
+        error("No clients found", 0)
+    end
+    print("Found " .. #clientIds .. " clients")
+
+    -- Download all chunks
+    local url = "https://github.com/IAteMinecraft/CC-Audio/raw/refs/heads/main/silok_-_final_fight_-_lost_in_time_-_amigaremix_03129.dfpwm"
+    print("Downloading chunks...")
+    local chunks = downloadChunks(url)
+    if #chunks == 0 then
+        error("Failed to download chunks", 0)
+    end
+    print("Downloaded " .. #chunks .. " chunks. Broadcasting in order...")
+
+    -- Broadcast chunks in order, waiting for acks
+    local success, err = pcall(function()
+        for i, chunk in ipairs(chunks) do
+            parallel.waitForAny(
+                function()
+                    print("Broadcasting chunk " .. i .. "/" .. #chunks)
+                    broadcastChunk(chunk)
+                    waitForAcks(clientIds) -- Wait for all clients to finish playing
+                end,
+                function() os.pullEvent("terminate") end
+            )
+        end
+    end)
+    if not success and err == "Terminated" then
+        rednet.broadcast({command = "stop"}, PROTOCOL)
+        waitForAcks(clientIds)
+        print("Broadcast stopped by user")
+    else
+        rednet.broadcast({command = "stop"}, PROTOCOL)
+        waitForAcks(clientIds)
+        print("Playback complete")
+    end
+end
+
+-- Enable terminate event handling
+term.clear()
+term.setCursorPos(1, 1)
+print("Main computer: Broadcasting chunks in order. Press Ctrl+T to stop.")
+main()
+
+-- Cleanup
+rednet.close(peripheral.getName(modem))
