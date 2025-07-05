@@ -37,7 +37,7 @@ local function checkForUpdate()
     -- Extract the version from the first line (local VERSION = "x.y.z")
     local remoteVersion = content:match('local%s+VERSION%s*=%s*["\'](%d+%.%d+%.%d+)["\']')
     if not remoteVersion then
-        print("Failed to parse remote version")
+        print("Failed to parse remote version: " .. remoteVersion)
         return false
     end
     
