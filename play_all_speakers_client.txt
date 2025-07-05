@@ -17,7 +17,7 @@ local function compareVersions(current, remote)
         local c = currParts[i] or 0
         local r = remParts[i] or 0
         if r > c then return true end
-        if c > r then return false end
+        --if c > r then return false end
     end
     return false
 end
