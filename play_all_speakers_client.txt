@@ -1,6 +1,6 @@
 local VERSION = "1.0.1"
 
--- Function to compare version strings (e.g., "1.0.1" < "1.0.2")
+-- Function to compare version strings (e.g., "1.0.0" < "1.0.1")
 local function compareVersions(current, remote)
     local function parseVersion(v)
         local parts = {}
@@ -34,8 +34,8 @@ local function checkForUpdate()
     local content = response.readAll()
     response.close()
     
-    -- Extract the version from the first line
-    local remoteVersion = content:match("^%s*%-%-%s*(%d+%.%d+%.%d+)")
+    -- Extract the version from the first line (local VERSION = "x.y.z")
+    local remoteVersion = content:match('local%s+VERSION%s*=%s*["\'](%d+%.%d+%.%d+)["\']')
     if not remoteVersion then
         print("Failed to parse remote version")
         return false
