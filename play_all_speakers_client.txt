@@ -60,7 +60,7 @@ term.clear()
 term.setCursorPos(1, 1)
 
 print("Checking for updates...")
-checkForUpdates()
+checkForUpdate()
 sleep(4)
 
 local modem = peripheral.find("modem") or error("No modem found", 0)
