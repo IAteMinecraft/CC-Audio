@@ -1,3 +1,4 @@
+-- 1.0.1
 local modem = peripheral.find("modem") or error("No modem found", 0)
 local speakers = {peripheral.find("speaker")} or error("No speakers connected", 0)
 local dfpwm = require("cc.audio.dfpwm")
