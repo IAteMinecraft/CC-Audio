@@ -61,7 +61,7 @@ end
 print("Installing CC-Audio...")
 
 -- Determine program version from argument
-local program = arg[1] or "main" -- Default to "main" if no argument provided
+local program = arg[3] or "main" -- Default to "main" if no argument provided
 if program ~= "main" and program ~= "client" then
     error("Invalid argument '" .. program .. "': must be 'main' or 'client'")
 end
