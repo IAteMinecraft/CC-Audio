@@ -27,6 +27,10 @@ To install the main and client programs you can use:
 
 where <main|client> represents which version you want to install, if no argument is provided, it defaults to main.
 
+>The Client automatically runs on startup
+>
+>Run the main client with `main`
+
 ---
 
 TODO:
