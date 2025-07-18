@@ -1,4 +1,4 @@
-local VERSION = "1.0.4"
+local VERSION = "1.0.5"
 
 -- Function to compare version strings (e.g., "1.0.0" < "1.0.1")
 local function compareVersions(current, remote)
@@ -9,10 +9,10 @@ local function compareVersions(current, remote)
         end
         return parts
     end
-    
+
     local currParts = parseVersion(current)
     local remParts = parseVersion(remote)
-    
+
     for i = 1, math.max(#currParts, #remParts) do
         local c = currParts[i] or 0
         local r = remParts[i] or 0
@@ -30,19 +30,19 @@ local function checkForUpdate()
         print("Failed to fetch update from " .. url)
         return false
     end
-    
+
     local content = response.readAll()
     response.close()
-    
+
     -- Extract the version from the first line (local VERSION = "x.y.z")
     local remoteVersion = content:match('local%s+VERSION%s*=%s*["\'](%d+%.%d+%.%d+)["\']')
     if not remoteVersion then
         print("Failed to parse remote version: " .. remoteVersion)
         return false
     end
-    
+
     print("Current version: " .. VERSION .. ", Remote version: " .. remoteVersion)
-    
+
     if compareVersions(VERSION, remoteVersion) then
         print("Newer version found. Updating...")
         local file = fs.open(shell.getRunningProgram(), "w")
@@ -61,7 +61,7 @@ term.setCursorPos(1, 1)
 
 print("Checking for updates...")
 checkForUpdate()
-sleep(4)
+sleep(2)
 
 local modem = peripheral.find("modem") or error("No modem found", 0)
 local speakers = {peripheral.find("speaker")} or error("No speakers connected", 0)

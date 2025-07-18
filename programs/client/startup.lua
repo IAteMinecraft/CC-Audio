@@ -1,1 +1,1 @@
-shell.execute("play_all_speakers_client.txt")
+shell.execute("audio_player_client.lua")
