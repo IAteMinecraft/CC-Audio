@@ -1,4 +1,4 @@
-local VERSION = "1.0.5"
+local VERSION = "1.0.6"
 
 -- Function to compare version strings (e.g., "1.0.0" < "1.0.1")
 local function compareVersions(current, remote)
@@ -65,19 +65,42 @@ sleep(2)
 
 local modem = peripheral.find("modem") or error("No modem found", 0)
 local speakers = {peripheral.find("speaker")} or error("No speakers connected", 0)
-local dfpwm = require("cc.audio.dfpwm")
-local decoder = dfpwm.make_decoder()
+--local dfpwm = require("cc.audio.dfpwm")
+--local decoder = dfpwm.make_decoder()
 local CHANNEL = 62 -- Must match main computer
 local PROTOCOL = "audio_playback" -- Must match main computer
 
 -- Open rednet on wired modem
 rednet.open(peripheral.getName(modem), CHANNEL)
 
+-- Queue for audio buffers to play asynchronously
+local audioQueue = {}
+
 local function playBuffer(buffer)
     for _, speaker in ipairs(speakers) do
         --speaker.stop()
         while not speaker.playAudio(buffer) do
             os.pullEvent("speaker_audio_empty")
+        end
+    end
+end
+
+local function stopAllSpeakers()
+    for _, speaker in ipairs(speakers) do
+        speaker.stop()
+    end
+end
+
+-- Async audio playback handler
+local function audioPlayer()
+    while true do
+        if #audioQueue > 0 then
+            local buffer = table.remove(audioQueue, 1) -- Get next buffer
+            playBuffer(buffer[2]) -- Play it
+            print("Chunk played on all speakers")
+            rednet.send(buffer[1], {command = "ack"}, PROTOCOL) -- Send acknowledgment
+        else
+            os.pullEvent("audio_queue") -- Wait for a new buffer to be added
         end
     end
 end
@@ -91,24 +114,34 @@ local function main()
         print("Received message from computer " .. id .. ": command = " .. (message.command or "nil"))
         if message.command == "ping" then
             print("Sending pong to computer " .. id)
+
             rednet.send(id, {command = "pong"}, PROTOCOL)
         elseif message.command == "chunk" then
             print("Received chunk, length: " .. #message.data .. " bytes")
-            local buffer = decoder(message.data) -- Decode the DFPWM chunk
-            playBuffer(buffer) -- Play on all speakers
-            print("Chunk played on all speakers")
-            rednet.send(id, {command = "ack"}, PROTOCOL) -- Send acknowledgment
+
+            --local buffer = decoder(message.data) -- Decode the DFPWM chunk
+            --playBuffer(message.data) -- Play on all speakers
+
+            table.insert(audioQueue, {[1] = id, [2] = message.data}) -- Queue the buffer
+            os.queueEvent("audio_queue") -- Signal audioPlayer to process queue
+
+            --print("Chunk played on all speakers")
+
+            --rednet.send(id, {command = "ack"}, PROTOCOL) -- Send acknowledgment
         elseif message.command == "stop" then
             print("Received stop command")
+
             rednet.send(id, {command = "ack"}, PROTOCOL)
             -- Stop all speakers on terminate
-            for _, speaker in ipairs(speakers) do
-                speaker.stop()
-            end
-            --break
+            stopAllSpeakers()
+            --break  -- Don't break because we want the script to run continuosly
         end
     end
 end
 
-main()
+--main()
+-- Run main and audioPlayer concurrently
+parallel.waitForAny(main, audioPlayer)
+
 rednet.close(peripheral.getName(modem))
+stopAllSpeakers()

@@ -1,4 +1,5 @@
 local tHex = require("tHex")
+local dfpwm = require("cc.audio.dfpwm")
 
 local STATE = {
     Uninitialized = "Uninitialized",
@@ -6,13 +7,14 @@ local STATE = {
     Ready         = "Ready",
     Stopping      = "Stopping",
     Stopped       = "Stopped",
-    Playing       = "Playing"
+    Playing       = "Playing",
 }
 
 local BACKGROUNDSTATE = {
     None              = "None",
     FindingClients    = "FindingClients",
-    WaitingForClients = "WaitingForClients"
+    WaitingForClients = "WaitingForClients",
+    DecodingChunk     = "Decoding",
 }
 
 table.append = function(target, source)
@@ -126,6 +128,7 @@ return function(name, basalt)
     local state = {First = STATE.Uninitialized, Second = BACKGROUNDSTATE.None}
     local clients = {}
     local chunks = {}
+    local dfpwm_decoder = dfpwm.make_decoder()
 
     local playThread = basalt.getActiveFrame():addThread()
     local startThread = basalt.getActiveFrame():addThread()
@@ -182,6 +185,16 @@ return function(name, basalt)
         state.Second = BACKGROUNDSTATE.None
     end
 
+    local function decodeChunk(chunkData)
+        state.Second = BACKGROUNDSTATE.DecodingChunk
+
+        local chunk = dfpwm_decoder(chunkData)
+
+        state.Second = BACKGROUNDSTATE.None
+        
+        return chunk
+    end
+
     local function broadcastChunk(chunk)
         rednet.broadcast({command = "chunk", data = chunk}, PROTOCAL)
     end
@@ -191,7 +204,7 @@ return function(name, basalt)
             while currentChunk <= chunksCount do
                 if (self:getState().First == STATE.Playing) then
                     self:print("Broadcasting chunk " .. currentChunk .. "/" .. chunksCount)
-                    broadcastChunk(chunks[currentChunk])
+                    broadcastChunk(decodeChunk(chunks[currentChunk]))
                     waitForAcknowledgements(self)
 
                     if (self:getState().First == STATE.Stopping) then
