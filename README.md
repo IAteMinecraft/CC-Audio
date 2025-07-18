@@ -26,3 +26,10 @@ To install the main and client programs you can use:
 > wget run https://github.com/IAteMinecraft/CC-Audio/raw/refs/heads/main/programs/installer <main|client>
 
 where <main|client> represents which version you want to install, if no argument is provided, it defaults to main.
+
+---
+
+TODO:
+- Allow using local files
+- Allow using Youtube links
+    - Add storing of added links
