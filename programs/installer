@@ -63,7 +63,7 @@ print("Installing CC-Audio...")
 -- Determine program version from argument
 local program = arg[1] or "main" -- Default to "main" if no argument provided
 if program ~= "main" and program ~= "client" then
-    error("Invalid argument: must be 'main' or 'client'")
+    error("Invalid argument '" .. program .. "': must be 'main' or 'client'")
 end
 
 -- Fetch contents of the specified program directory
