@@ -1,0 +1,86 @@
+-- CC-Audio Installer for ComputerCraft: Tweaked
+-- Installs either /programs/main or /programs/client based on argument
+
+-- Simple JSON parsing function
+local function parseJson(jsonStr)
+    local json = textutils.unserializeJSON(jsonStr)
+    if not json then
+        error("Failed to parse JSON response")
+    end
+    return json
+end
+
+-- Download a file from a URL and save it to the specified path
+local function downloadFile(url, path)
+    local response = http.get(url)
+    if not response then
+        error("Failed to download " .. url)
+    end
+    local content = response.readAll()
+    response.close()
+    
+    local file = fs.open(path, "w")
+    if not file then
+        error("Failed to open file for writing: " .. path)
+    end
+    file.write(content)
+    file.close()
+    print("Downloaded: " .. path)
+end
+
+-- Create a directory if it doesn't exist
+local function createDir(path)
+    if not fs.exists(path) then
+        fs.makeDir(path)
+        print("Created directory: " .. path)
+    end
+end
+
+-- Fetch directory contents using GitHub API and download files recursively
+local function downloadDirectory(apiUrl, localPath)
+    local response = http.get(apiUrl, { ["Accept"] = "application/vnd.github.v3+json" })
+    if not response then
+        error("Failed to fetch directory contents from " .. apiUrl)
+    end
+    local jsonStr = response.readAll()
+    response.close()
+    
+    local contents = parseJson(jsonStr)
+    createDir(localPath)
+    
+    for _, item in ipairs(contents) do
+        if item.type == "file" and item.download_url then
+            downloadFile(item.download_url, fs.combine(localPath, item.name))
+        elseif item.type == "dir" then
+            downloadDirectory(item.url, fs.combine(localPath, item.name))
+        end
+    end
+end
+
+-- Main installation process
+print("Installing CC-Audio...")
+
+-- Determine program version from argument
+local program = arg[1] or "main" -- Default to "main" if no argument provided
+if program ~= "main" and program ~= "client" then
+    error("Invalid argument: must be 'main' or 'client'")
+end
+
+-- Fetch contents of the specified program directory
+local apiUrl = "https://api.github.com/repos/IAteMinecraft/CC-Audio/contents/programs/" .. program
+local response = http.get(apiUrl, { ["Accept"] = "application/vnd.github.v3+json" })
+if not response then
+    error("Failed to fetch repository contents from " .. apiUrl)
+end
+local jsonStr = response.readAll()
+response.close()
+
+-- Download all files and directories in the program folder
+downloadDirectory(apiUrl, "")
+
+if (program == "client") then
+    print("Installation complete! \n  Reboot to run the client.")
+
+else
+    print("Installation complete! \n  Run 'main' to start CC-Audio.")
+end
