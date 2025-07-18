@@ -38,7 +38,7 @@ end
 
 -- Fetch directory contents using GitHub API and download files recursively
 local function downloadDirectory(apiUrl, localPath)
-    local response = http.get(apiUrl, { ["Accept"] = "application/vnd.github.v3+json", ["Cache-Control"} = "max-age+0" })
+    local response = http.get(apiUrl, { ["Accept"] = "application/vnd.github.v3+json", ["Cache-Control"} = "max-age=0" })
     if not response then
         error("Failed to fetch directory contents from " .. apiUrl)
     end
@@ -68,7 +68,7 @@ end
 
 -- Fetch contents of the specified program directory
 local apiUrl = "https://api.github.com/repos/IAteMinecraft/CC-Audio/contents/programs/" .. program
-local response = http.get(apiUrl, { ["Accept"] = "application/vnd.github.v3+json" })
+local response = http.get(apiUrl, { ["Accept"] = "application/vnd.github.v3+json", ["Cache-Control"} = "max-age=0"})
 if not response then
     error("Failed to fetch repository contents from " .. apiUrl)
 end
