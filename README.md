@@ -11,7 +11,6 @@ then connect a few speakers (I find max 4 speakers works well)
 >&nbsp;&nbsp;&nbsp;&nbsp;it will cause the clients to fight for the speaker,  
 >&nbsp;&nbsp;&nbsp;&nbsp;*bad* idea  
 
-Put the two files from `programs/startup` onto the client computer, then reboot  
 >&nbsp;&nbsp;&nbsp;&nbsp;The client script contains an auto-updater,  
 >&nbsp;&nbsp;&nbsp;&nbsp;so you do not need to worry about having to update all the different clients connected to the network!
 
