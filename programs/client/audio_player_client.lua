@@ -24,7 +24,7 @@ end
 
 -- Auto-updater function
 local function checkForUpdate()
-    local url = "https://raw.githubusercontent.com/IAteMinecraft/CC-Audio/main/play_all_speakers_client.txt"
+    local url = "https://github.com/IAteMinecraft/CC-Audio/raw/refs/heads/main/programs/client/audio_player_client.lua"
     local response = http.get(url)
     if not response then
         print("Failed to fetch update from " .. url)
