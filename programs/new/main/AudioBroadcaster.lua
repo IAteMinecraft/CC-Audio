@@ -2,7 +2,8 @@ local modem = peripheral.find("modem") or error("No modem found", 0)
 
 local CHANNEL = 62
 local PROTOCOL = "audio_playback"
-local TIMEOUT = 6  -- Increased timeout for reliability
+--local TIMEOUT = 5  -- Increased timeout for reliability
+local TIMEOUT = ((16 * 1024) * 8) / 48000  -- Calculate how long a chunk will take to play
 local PING = "ping"
 local PONG = "pong"
 local CHUNK = "chunk"
